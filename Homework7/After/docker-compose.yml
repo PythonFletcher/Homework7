@@ -1,0 +1,45 @@
+services:
+  web:
+    build: .
+    image: mywebapp
+    ports:
+      - "127.0.0.1:15000:5000"           # Bind only to localhost to prevent external access
+    volumes:
+      - .:/app:ro                       # Mount as read-only to prevent container from modifying source
+    command: flask run --host=0.0.0.0 --port=5000
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+    depends_on:
+      - db
+    networks:
+      - frontend
+    mem_limit: 512m                    # Memory constraint
+    pids_limit: 100                    # Limit number of processes
+    read_only: true                   # Root filesystem is read-only
+    security_opt:
+      - no-new-privileges:true        # Prevent privilege escalation
+    restart: unless-stopped           # Auto-restart but not during crash loops
+
+  db:
+    image: postgres:13
+    env_file:
+      - .env
+    networks:
+      - backend
+    mem_limit: 512m
+    pids_limit: 100
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:rw  # Explicit volume for persistence
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  postgres_data:
+
